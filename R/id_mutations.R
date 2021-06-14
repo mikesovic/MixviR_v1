@@ -307,7 +307,7 @@ call_mutations <- function(sample.dir,
                            write.mut.table = FALSE) {
 
   samp_files <- dir(sample.dir)
-  reference <- read_tsv(reference)
+  reference <- readr::read_tsv(reference)
 
   #this stores all mutation calls across all samples
   all_variants <- data.frame()
