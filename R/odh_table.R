@@ -73,7 +73,7 @@ write_ODH_table <- function(sample.dir,
     dplyr::mutate("ALT_ID" = paste0(gene, "_del", del)) %>%
     dplyr::select(samp_name, ALT_ID, ALT_COUNT, TOTAL_depth)
 
-  samp_muts_split_indel <- rbind(samp_muts_odh, deletions)
+  samp_muts_split_indel <- dplyr::bind_rows(samp_muts_odh, deletions)
 
   odh_mutations <- readr::read_tsv(mut.positions) %>%
     dplyr::rename("ALT_ID" = "MUT",
@@ -86,7 +86,6 @@ write_ODH_table <- function(sample.dir,
   for (file in samp_files) {
 
     curr_samp <- file
-    print("defined curr_samp")
 
     if (!is.null(name.sep)) {
       curr_samp <- gsub(paste0("(.+?)", name.sep, "(.*)"), "\\1", file)
@@ -95,43 +94,38 @@ write_ODH_table <- function(sample.dir,
     samp_muts_odh_filt <- samp_muts_split_indel %>%
       dplyr::filter(samp_name == curr_samp)
 
-    print("filtered for samp")
     #get the set of mutations of interest that didn't appear in the sample
     not_in_samp <- dplyr::anti_join(x = odh_mutations,
                                     y = samp_muts_odh_filt,
                                     by  = "ALT_ID")
 
     ref_df <- readr::read_tsv(reference)
-    print(file)
-    print(sample.dir)
+
     #get depths for positions associated with each mutation of interest not observed in the current sample
     ref_w_depth <- add_depths_to_ref(ref = ref_df,
                                      samp = file,
                                      samp.dir = sample.dir)
 
-    print("finished ref_w_depth")
     depths <- ref_w_depth %>%
-      select(genomic_pos, DP)
+      dplyr::select(genomic_pos, DP)
 
-    not_in_samp <- left_join(x = not_in_samp,
-                             y = depths,
-                             by = "genomic_pos")
+    not_in_samp <- dplyr::left_join(x = not_in_samp,
+                                    y = depths,
+                                    by = "genomic_pos")
 
     not_in_samp <- not_in_samp %>%
       dplyr::mutate("samp_name" = curr_samp,
                     "ALT_COUNT" = 0,
                     "TOTAL_depth" = DP) %>%
-      select(samp_name, ALT_ID, ALT_COUNT, TOTAL_depth)
+      dplyr::select(samp_name, ALT_ID, ALT_COUNT, TOTAL_depth)
 
     all_variants <- dplyr::bind_rows(all_variants, samp_muts_odh_filt, not_in_samp)
-    print("finished loop")
   }
 
-  print("ready to write")
   write.table(all_variants,
-              file = "/Users/sovic.1/Desktop/test2/test_odh.csv",
+              file = "odh_mutation_read_counts.csv",
               sep = ",",
               row.names = FALSE,
               quote = FALSE)
-  #all_variants
+
 }
