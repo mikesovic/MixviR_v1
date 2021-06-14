@@ -130,6 +130,8 @@ write_ODH_table <- function(sample.dir,
                     into = c("gene", "mutation"),
                     sep = "_")
 
+  all_variants_summary$total_reads <- tidyr::replace_na(all_variants_summary$total_reads, 0)
+
   write.table(all_variants_summary,
               file = "odh_mutation_read_counts.csv",
               sep = ",",
