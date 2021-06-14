@@ -149,7 +149,7 @@ id_indels <- function(variant.calls, ref) {
     #probably add it as col in ref) and gene_aa_position to figure out whether it
     #starts at a 1st codon position or not
 
-    idx_to_adjust <- which(dels_in_frame_w_ref$codon_position != 1)
+    idx_to_adjust <- which(dels_in_frame_w_ref$codon_position != 3)
     dels_in_frame_w_ref$gene_aa_position[idx_to_adjust] <- dels_in_frame_w_ref$gene_aa_position[idx_to_adjust]+1
     #if (){}
     #dels_in_frame_w_ref$gene_aa_position_adj <- dels_in_frame_w_ref$gene_aa_position+1

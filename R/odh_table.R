@@ -122,7 +122,15 @@ write_ODH_table <- function(sample.dir,
     all_variants <- dplyr::bind_rows(all_variants, samp_muts_odh_filt, not_in_samp)
   }
 
-  write.table(all_variants,
+  all_variants_summary <- all_variants %>%
+    dplyr::group_by(samp_name, ALT_ID) %>%
+    dplyr::summarise("alt_reads" = mean(ALT_COUNT),
+                     "total_reads" = mean(TOTAL_depth)) %>%
+    tidyr::separate(col = "ALT_ID",
+                    into = c("gene", "mutation"),
+                    sep = "_")
+
+  write.table(all_variants_summary,
               file = "odh_mutation_read_counts.csv",
               sep = ",",
               row.names = FALSE,
