@@ -338,7 +338,8 @@ call_mutations <- function(sample.dir,
     sample_variants <- readr::read_csv(paste0(sample.dir, "/", file)) %>%
       dplyr::filter(ALT != '.') %>%
       dplyr::select(POS, REF, ALT, ALT_COUNT, DP) %>%
-      dplyr::mutate("AF" = ALT_COUNT/DP)
+      dplyr::mutate("AF" = ALT_COUNT/DP) %>%
+      dplyr::filter(AF >= min.alt.freq)
       #dplyr::mutate("ALT_COUNT" = round(AF*DP)) %>%
       #select(POS, REF, ALT, AF, ALT_COUNT)
 
@@ -441,7 +442,7 @@ call_mutations <- function(sample.dir,
   samp_mutations <- all_variants %>%
     #dplyr::select(samp_date, date, sample, gene, ALT_ID, ALT_freq, ALT_COUNT) %>%
     dplyr::select(samp_name, gene, genomic_pos, ALT_ID, ALT_freq, ALT_COUNT, DP) %>%
-    dplyr::filter(ALT_freq > min.alt.freq) %>%
+    #dplyr::filter(ALT_freq > min.alt.freq) %>%
     dplyr::rename("TOTAL_depth" = "DP")
 
   if (write.mut.table == TRUE) {
