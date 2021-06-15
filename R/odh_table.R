@@ -43,8 +43,8 @@ write_ODH_table <- function(sample.dir,
   if (length(grep("_del.+/.+", samp_mutations$ALT_ID)) > 0) {
     #get deletions of length >1 and split them
     deletions <- samp_mutations %>%
-      dplyr::select(samp_name, ALT_ID, ALT_COUNT, TOTAL_depth) %>%
       dplyr::slice(grep("_del.+/.+", samp_mutations$ALT_ID)) %>%
+      dplyr::filter(gene != "non-genic") %>%
       dplyr::select(samp_name, ALT_ID, ALT_COUNT, TOTAL_depth) %>%
       tidyr::separate(col = ALT_ID,
                       into = c("gene", "ID"),
@@ -53,6 +53,17 @@ write_ODH_table <- function(sample.dir,
       tidyr::separate(col = ID,
                       into = c("start_aa", "end_aa"),
                       sep = "/")
+
+    #think deletions with sizes that are multiples of 3 that are in non-genic regions
+    #are getting lost in the above, so adding them back in.
+    nongenic_check <- samp_mutations %>%
+      dplyr::slice(grep("_del.+/.+", samp_mutations$ALT_ID)) %>%
+      dplyr::filter(gene == "non-genic") %>%
+      dplyr::select(samp_name, ALT_ID, ALT_COUNT, TOTAL_depth)
+
+    if (nrow(nongenic_check) > 0) {
+      samp_muts_odh <- dplyr::bind_rows(samp_muts_odh, nongenic_check)
+    }
 
     aa_positions <- mapply(FUN = function(start, end) {
       start:end },
