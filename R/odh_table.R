@@ -40,40 +40,44 @@ write_ODH_table <- function(sample.dir,
     dplyr::select(samp_name, ALT_ID, ALT_COUNT, TOTAL_depth) %>%
     dplyr::slice(-grep("_del.+/.+", samp_mutations$ALT_ID))
 
-  #get deletions of length >1 and split them
-  deletions <- samp_mutations %>%
-    dplyr::select(samp_name, ALT_ID, ALT_COUNT, TOTAL_depth) %>%
-    dplyr::slice(grep("_del.+/.+", samp_mutations$ALT_ID)) %>%
-    dplyr::select(samp_name, ALT_ID, ALT_COUNT, TOTAL_depth) %>%
-    tidyr::separate(col = ALT_ID,
-                    into = c("gene", "ID"),
-                    sep = "_") %>%
-    dplyr::mutate("ID" = gsub("del", "", ID)) %>%
-    tidyr::separate(col = ID,
-                    into = c("start_aa", "end_aa"),
-                    sep = "/")
+  if (length(grep("_del.+/.+", samp_mutations$ALT_ID)) > 0) {
+    #get deletions of length >1 and split them
+    deletions <- samp_mutations %>%
+      dplyr::select(samp_name, ALT_ID, ALT_COUNT, TOTAL_depth) %>%
+      dplyr::slice(grep("_del.+/.+", samp_mutations$ALT_ID)) %>%
+      dplyr::select(samp_name, ALT_ID, ALT_COUNT, TOTAL_depth) %>%
+      tidyr::separate(col = ALT_ID,
+                      into = c("gene", "ID"),
+                      sep = "_") %>%
+      dplyr::mutate("ID" = gsub("del", "", ID)) %>%
+      tidyr::separate(col = ID,
+                      into = c("start_aa", "end_aa"),
+                      sep = "/")
 
-  aa_positions <- mapply(FUN = function(start, end) {
-    start:end },
-    start = deletions$start_aa,
-    end = deletions$end_aa
-  )
-  names(aa_positions) <- NULL
+    aa_positions <- mapply(FUN = function(start, end) {
+      start:end },
+      start = deletions$start_aa,
+      end = deletions$end_aa
+    )
+    names(aa_positions) <- NULL
 
-  collapse_fun <- function(x) {
-    x <- unlist(x)
-    paste(x, collapse = ",")
+    collapse_fun <- function(x) {
+      x <- unlist(x)
+      paste(x, collapse = ",")
+    }
+
+    aa_positions_collapsed <- lapply(aa_positions, collapse_fun)
+    deletions$del <- aa_positions_collapsed
+
+    deletions <- deletions %>%
+      tidyr::separate_rows(del, sep = ",") %>%
+      dplyr::mutate("ALT_ID" = paste0(gene, "_del", del)) %>%
+      dplyr::select(samp_name, ALT_ID, ALT_COUNT, TOTAL_depth)
+
+    samp_muts_split_indel <- dplyr::bind_rows(samp_muts_odh, deletions)
+  } else {
+    samp_muts_split_indel <- samp_muts_odh
   }
-
-  aa_positions_collapsed <- lapply(aa_positions, collapse_fun)
-  deletions$del <- aa_positions_collapsed
-
-  deletions <- deletions %>%
-    tidyr::separate_rows(del, sep = ",") %>%
-    dplyr::mutate("ALT_ID" = paste0(gene, "_del", del)) %>%
-    dplyr::select(samp_name, ALT_ID, ALT_COUNT, TOTAL_depth)
-
-  samp_muts_split_indel <- dplyr::bind_rows(samp_muts_odh, deletions)
 
   odh_mutations <- readr::read_tsv(mut.positions) %>%
     dplyr::rename("ALT_ID" = "MUT",
