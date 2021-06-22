@@ -147,6 +147,9 @@ write_ODH_table <- function(sample.dir,
 
   all_variants_summary$total_reads <- tidyr::replace_na(all_variants_summary$total_reads, 0)
 
+  all_variants_summary$mutation <- gsub("(F?del)(.+)", "\\2", all_variants_summary$mutation)
+  all_variants_summary$mutation <- gsub("(F?ins)(.+)", "\\2", all_variants_summary$mutation)
+
   write.table(all_variants_summary,
               file = "odh_mutation_read_counts.csv",
               sep = ",",
