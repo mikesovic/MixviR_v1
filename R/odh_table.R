@@ -22,6 +22,7 @@
 #' @param mut.positions Data frame that defines amino acid changes of interest and associated mutation positions
 #' @param name.sep Character in sample names that separates the unique sample identifier (characters preceeding the separator) from any additional text. Only text preceeding the first instance of the character will be retained.
 #' @param reference Reference genome information in MixVir format.
+#' @param site.meta Comma separated table with metadata for each sample site. Cols codes, Site_ID, Facility_Name, LAB, replicate
 #' Should have two columns - 'MUT' and 'POS'
 #' @keywords ODH
 #' @export
@@ -31,7 +32,8 @@
 write_ODH_table <- function(sample.dir,
                             mut.positions = "https://raw.githubusercontent.com/mikesovic/IDI-AMSL/main/ODH_mut_pos_master_split_dels_6-3-21.txt",
                             name.sep = "NULL",
-                            reference = "https://raw.githubusercontent.com/mikesovic/IDI-AMSL/main/SC2_ref.tsv") {
+                            reference = "https://raw.githubusercontent.com/mikesovic/IDI-AMSL/main/SC2_ref.tsv",
+                            site.meta = "https://raw.githubusercontent.com/mikesovic/IDI-AMSL/main/OSU_SequencingSites_CODEX.csv") {
 
   samp_files <- dir(sample.dir)
   print(samp_files)
@@ -147,8 +149,26 @@ write_ODH_table <- function(sample.dir,
 
   all_variants_summary$total_reads <- tidyr::replace_na(all_variants_summary$total_reads, 0)
 
-  all_variants_summary$mutation <- gsub("(F?del)(.+)", "\\2", all_variants_summary$mutation)
-  all_variants_summary$mutation <- gsub("(F?ins)(.+)", "\\2", all_variants_summary$mutation)
+  all_variants_summary$mutation <- gsub("(F?del)(.+)", "\\2\\1", all_variants_summary$mutation)
+  all_variants_summary$mutation <- gsub("(F?ins)(.+)", "\\2\\1", all_variants_summary$mutation)
+
+  #all_variants_summary$laboratory <- "OSU_AMSL"
+  site_df <- readr::read_csv(site.meta, header = TRUE)
+
+  all_variants_summary <- all_variants_summary %>%
+    tidyr::separate(col = samp_name,
+                    into = c("codex", "date"),
+                    sep = "-")
+
+  all_variants_summary <- dplyr::left_join(x = all_variants_summary,
+                                           y = site_df,
+                                           by = "codex") %>%
+    dplyr::select(LAB, Site_ID, date, Facility_Name, replicate, gene, mutation, alt_reads, total_reads) %>%
+    tidyr::unite(col = "sample_id",
+                 Site_ID, date,
+                 sep = "_",
+                 remove = FALSE) %>%
+    dplyr::select(LAB, sample_id, Facility_Name, replicate, gene, mutation, alt_reads, total_reads)
 
   write.table(all_variants_summary,
               file = "odh_mutation_read_counts.csv",
