@@ -154,7 +154,7 @@ write_ODH_table <- function(sample.dir,
   all_variants_summary$mutation <- gsub("(F?ins)(.+)", "\\2\\1", all_variants_summary$mutation)
 
   #all_variants_summary$laboratory <- "OSU_AMSL"
-  site_df <- readr::read_csv(site.meta, header = TRUE)
+  site_df <- readr::read_csv(site.meta, col_names = TRUE)
 
   all_variants_summary <- all_variants_summary %>%
     tidyr::separate(col = samp_name,
