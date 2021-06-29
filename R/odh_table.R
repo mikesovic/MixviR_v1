@@ -70,7 +70,8 @@ write_ODH_table <- function(sample.dir,
     aa_positions <- mapply(FUN = function(start, end) {
       start:end },
       start = deletions$start_aa,
-      end = deletions$end_aa
+      end = deletions$end_aa,
+      SIMPLIFY = FALSE
     )
     names(aa_positions) <- NULL
 
